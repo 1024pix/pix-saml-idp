@@ -1,7 +1,6 @@
 const chalk               = require('chalk'),
       express             = require('express'),
       os                  = require('os'),
-      fs                  = require('fs'),
       http                = require('http'),
       https               = require('https'),
       path                = require('path'),
@@ -16,31 +15,6 @@ const chalk               = require('chalk'),
 
 const { IDP_PATHS, UNDEFINED_VALUE, WILDCARD_ADDRESSES, CERT_OPTIONS, profile, idpOptions, metadata } = require('./config')
 const { dedent } = require('./utils/string-utils');
-
-function resolveFilePath(filePath) {
-
-  if (filePath.startsWith('saml-idp/')) {
-    // Allows file path options to files included in this package, like config.js
-    const resolvedPath = require.resolve(filePath.replace(/^saml\-idp\//, `${__dirname}/`));
-    return fs.existsSync(resolvedPath) && resolvedPath;
-  }
-  var possiblePath;
-  if (fs.existsSync(filePath)) {
-    return filePath;
-  }
-  if (filePath.startsWith('~/')) {
-    possiblePath = path.resolve(process.env.HOME, filePath.slice(2));
-    if (fs.existsSync(possiblePath)) {
-      return possiblePath;
-    } else {
-      // for ~/ paths, don't try to resolve further
-      return filePath;
-    }
-  }
-  return ['.', __dirname]
-      .map(base => path.resolve(base, filePath))
-      .find(possiblePath => fs.existsSync(possiblePath));
-}
 
 function getHashCode(str) {
   let hash = 0;
@@ -161,12 +135,6 @@ function processArgs(args, options) {
         default: true,
         alias: 'signResponse'
       },
-      configFile: {
-        description: 'Path to a SAML attribute config file',
-        required: true,
-        default: 'saml-idp/config.js',
-        alias: 'conf'
-      },
       rollSession: {
         description: 'Create a new session for every authn request instead of reusing an existing session',
         required: false,
@@ -190,22 +158,6 @@ function processArgs(args, options) {
         if (argv.encryptionCert === undefined) {
           return 'encryptionCert argument is also required for assertion encryption';
         }
-      }
-      return true;
-    })
-    .check(function(argv, aliases) {
-      if (argv.config) {
-        return true;
-      }
-      const configFilePath = resolveFilePath(argv.configFile);
-
-      if (!configFilePath) {
-        return 'SAML attribute config file path "' + argv.configFile + '" is not a valid path.\n';
-      }
-      try {
-        argv.config = require(configFilePath);
-      } catch (error) {
-        return 'Encountered an exception while loading SAML attribute config file "' + configFilePath + '".\n' + error;
       }
       return true;
     })

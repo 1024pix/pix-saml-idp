@@ -1,33 +1,9 @@
 const SimpleProfileMapper = require('./lib/simpleProfileMapper');
 const { dedent, prettyPrintXml } = require('./utils/string-utils');
+const { resolveFilePath } = require('./utils/file-utils');
 const Parser = require('xmldom').DOMParser;
 const chalk = require('chalk');
 const fs = require('fs');
-
-function resolveFilePath(filePath) {
-
-  if (filePath.startsWith('saml-idp/')) {
-    // Allows file path options to files included in this package, like config.js
-    const resolvedPath = require.resolve(filePath.replace(/^saml\-idp\//, `${__dirname}/`));
-    return fs.existsSync(resolvedPath) && resolvedPath;
-  }
-  let possiblePath;
-  if (fs.existsSync(filePath)) {
-    return filePath;
-  }
-  if (filePath.startsWith('~/')) {
-    possiblePath = path.resolve(process.env.HOME, filePath.slice(2));
-    if (fs.existsSync(possiblePath)) {
-      return possiblePath;
-    } else {
-      // for ~/ paths, don't try to resolve further
-      return filePath;
-    }
-  }
-  return ['.', __dirname]
-      .map(base => path.resolve(base, filePath))
-      .find(possiblePath => fs.existsSync(possiblePath));
-}
 
 function certFileCoercer(value) {
   const filePath = resolveFilePath(value);
