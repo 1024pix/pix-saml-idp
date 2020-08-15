@@ -1,8 +1,3 @@
-
-/**
- * Module dependencies.
- */
-
 const chalk               = require('chalk'),
       express             = require('express'),
       os                  = require('os'),
@@ -16,51 +11,11 @@ const chalk               = require('chalk'),
       bodyParser          = require('body-parser'),
       session             = require('express-session'),
       yargs               = require('yargs/yargs'),
-      xmlFormat           = require('xml-formatter'),
       samlp               = require('samlp'),
-      Parser              = require('xmldom').DOMParser,
-      SessionParticipants = require('samlp/lib/sessionParticipants'),
-      SimpleProfileMapper = require('./lib/simpleProfileMapper.js');
+      SessionParticipants = require('samlp/lib/sessionParticipants');
 
-/**
- * Globals
- */
-
-const IDP_PATHS = {
-  SSO: '/saml/sso',
-  SLO: '/saml/slo',
-  METADATA: '/metadata',
-  SIGN_IN: '/signin',
-  SIGN_OUT: '/signout',
-  SETTINGS: '/settings'
-}
-const CERT_OPTIONS = [
-  'cert',
-  'key',
-  'encryptionCert',
-  'encryptionPublicKey',
-  'httpsPrivateKey',
-  'httpsCert',
-];
-const WILDCARD_ADDRESSES = ['0.0.0.0', '::'];
-const UNDEFINED_VALUE = 'None';
-const CRYPT_TYPES = {
-  certificate: /-----BEGIN CERTIFICATE-----[^-]*-----END CERTIFICATE-----/,
-  'RSA private key': /-----BEGIN RSA PRIVATE KEY-----\n[^-]*\n-----END RSA PRIVATE KEY-----/,
-  'public key': /-----BEGIN PUBLIC KEY-----\n[^-]*\n-----END PUBLIC KEY-----/,
-};
-const KEY_CERT_HELP_TEXT = dedent(chalk`
-  To generate a key/cert pair for the IdP, run the following command:
-
-  {gray openssl req -x509 -new -newkey rsa:2048 -nodes \
-    -subj '/C=US/ST=California/L=San Francisco/O=JankyCo/CN=Test Identity Provider' \
-    -keyout idp-private-key.pem \
-    -out idp-public-cert.pem -days 7300}`
-);
-
-function matchesCertType(value, type) {
-  return CRYPT_TYPES[type] && CRYPT_TYPES[type].test(value);
-}
+const { IDP_PATHS, UNDEFINED_VALUE, WILDCARD_ADDRESSES, CERT_OPTIONS, profile, idpOptions, metadata } = require('./config')
+const { dedent } = require('./utils/string-utils');
 
 function resolveFilePath(filePath) {
 
@@ -83,28 +38,12 @@ function resolveFilePath(filePath) {
     }
   }
   return ['.', __dirname]
-    .map(base => path.resolve(base, filePath))
-    .find(possiblePath => fs.existsSync(possiblePath));
-}
-
-function makeCertFileCoercer(type, description, helpText) {
-  return function certFileCoercer(value) {
-    if (matchesCertType(value, type)) {
-      return value;
-    }
-
-    const filePath = resolveFilePath(value);
-    if (filePath) {
-      return fs.readFileSync(filePath)
-    }
-    throw new Error(
-      chalk`{red Invalid / missing {bold ${description}}} - {yellow not a valid crypt key/cert or file path}${helpText ? '\n' + helpText : ''}`
-    )
-  };
+      .map(base => path.resolve(base, filePath))
+      .find(possiblePath => fs.existsSync(possiblePath));
 }
 
 function getHashCode(str) {
-  var hash = 0;
+  let hash = 0;
   if (str.length == 0) return hash;
   for (i = 0; i < str.length; i++) {
     char = str.charCodeAt(i);
@@ -114,25 +53,15 @@ function getHashCode(str) {
   return hash;
 }
 
-function dedent(str) {
-  // Reduce the indentation of all lines by the indentation of the first line
-  const match = str.match(/^\n?( +)/);
-  if (!match) {
-    return str;
-  }
-  const indentRe = new RegExp(`\n${match[1]}`, 'g');
-  return str.replace(indentRe, '\n').replace(/^\n/, '');
-}
-
 function formatOptionValue(key, value) {
   if (typeof value === 'string') {
     return value;
   }
   if (CERT_OPTIONS.includes(key)) {
     return chalk`${
-      value.toString()
-        .replace(/-----.+?-----|\n/g, '')
-        .substring(0, 80)
+        value.toString()
+            .replace(/-----.+?-----|\n/g, '')
+            .substring(0, 80)
     }{white …}`;
   }
   if (!value && value !== false) {
@@ -145,25 +74,11 @@ function formatOptionValue(key, value) {
   return `${JSON.stringify(value)}`;
 }
 
-function prettyPrintXml(xml, indent) {
-  // This works well, because we format the xml before applying the replacements
-  const prettyXml = xmlFormat(xml, {indentation: '  '})
-    // Matches `<{prefix}:{name} .*?>`
-    .replace(/<(\/)?((?:[\w]+)(?::))?([\w]+)(.*?)>/g, chalk`<{green $1$2{bold $3}}$4>`)
-    // Matches ` {attribute}="{value}"
-    .replace(/ ([\w:]+)="(.+?)"/g, chalk` {white $1}={cyan "$2"}`);
-  if (indent) {
-    return prettyXml.replace(/(^|\n)/g, `$1${' '.repeat(indent)}`);
-  }
-  return prettyXml;
-}
-
-
 /**
  * Arguments
  */
 function processArgs(args, options) {
-  var baseArgv;
+  let baseArgv;
 
   if (options) {
     baseArgv = yargs(args).config(options);
@@ -187,18 +102,6 @@ function processArgs(args, options) {
         alias: 'p',
         default: 7000
       },
-      cert: {
-        description: 'IdP Signature PublicKey Certificate',
-        required: true,
-        default: './idp-public-cert.pem',
-        coerce: makeCertFileCoercer('certificate', 'IdP Signature PublicKey Certificate', KEY_CERT_HELP_TEXT)
-      },
-      key: {
-        description: 'IdP Signature PrivateKey Certificate',
-        required: true,
-        default: './idp-private-key.pem',
-        coerce: makeCertFileCoercer('RSA private key', 'IdP Signature PrivateKey Certificate', KEY_CERT_HELP_TEXT)
-      },
       issuer: {
         description: 'IdP Issuer URI',
         required: true,
@@ -207,7 +110,7 @@ function processArgs(args, options) {
       },
       acsUrl: {
         description: 'SP Assertion Consumer URL',
-        required: true,
+        required: false,
         alias: 'acs'
       },
       sloUrl: {
@@ -217,7 +120,7 @@ function processArgs(args, options) {
       },
       audience: {
         description: 'SP Audience URI',
-        required: true,
+        required: false,
         alias: 'aud'
       },
       serviceProviderId: {
@@ -244,33 +147,6 @@ function processArgs(args, options) {
         boolean: true,
         alias: 'enc',
         default: false
-      },
-      encryptionCert: {
-        description: 'SP Certificate (pem) for Assertion Encryption',
-        required: false,
-        string: true,
-        alias: 'encCert',
-        coerce: makeCertFileCoercer('certificate', 'Encryption cert')
-      },
-      encryptionPublicKey: {
-        description: 'SP RSA Public Key (pem) for Assertion Encryption ' +
-        '(e.g. openssl x509 -pubkey -noout -in sp-cert.pem)',
-        required: false,
-        string: true,
-        alias: 'encKey',
-        coerce: makeCertFileCoercer('public key', 'Encryption public key')
-      },
-      httpsPrivateKey: {
-        description: 'Web Server TLS/SSL Private Key (pem)',
-        required: false,
-        string: true,
-        coerce: makeCertFileCoercer('RSA private key')
-      },
-      httpsCert: {
-        description: 'Web Server TLS/SSL Certificate (pem)',
-        required: false,
-        string: true,
-        coerce: makeCertFileCoercer('certificate')
       },
       https: {
         description: 'Enables HTTPS Listener (requires httpsPrivateKey and httpsCert)',
@@ -304,18 +180,6 @@ function processArgs(args, options) {
         default: 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport',
         alias: 'acr'
       },
-      authnContextDecl: {
-        description: 'Authentication Context Declaration (XML FilePath)',
-        required: false,
-        string: true,
-        alias: 'acd',
-        coerce: function (value) {
-          const filePath = resolveFilePath(value);
-          if (filePath) {
-            return fs.readFileSync(filePath, 'utf8')
-          }
-        }
-      }
     })
     .example('$0 --acsUrl http://acme.okta.com/auth/saml20/exampleidp --audience https://www.okta.com/saml2/service-provider/spf5aFRRXFGIMAYXQPNV', '')
     .check(function(argv, aliases) {
@@ -389,83 +253,6 @@ function _runServer(argv) {
     Trust ACS URL in Request:
       {cyan ${!argv.disableRequestAcsUrl}}
   `));
-
-
-  /**
-   * IdP Configuration
-   */
-
-  const idpOptions = {
-    issuer:                 argv.issuer,
-    serviceProviderId:      argv.serviceProviderId || argv.audience,
-    cert:                   argv.cert,
-    key:                    argv.key,
-    audience:               argv.audience,
-    recipient:              argv.acsUrl,
-    destination:            argv.acsUrl,
-    acsUrl:                 argv.acsUrl,
-    sloUrl:                 argv.sloUrl,
-    RelayState:             argv.relayState,
-    allowRequestAcsUrl:     !argv.disableRequestAcsUrl,
-    digestAlgorithm:        'sha256',
-    signatureAlgorithm:     'rsa-sha256',
-    signResponse:           argv.signResponse,
-    encryptAssertion:       argv.encryptAssertion,
-    encryptionCert:         argv.encryptionCert,
-    encryptionPublicKey:    argv.encryptionPublicKey,
-    encryptionAlgorithm:    'http://www.w3.org/2001/04/xmlenc#aes256-cbc',
-    keyEncryptionAlgorithm: 'http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p',
-    lifetimeInSeconds:      3600,
-    authnContextClassRef:   argv.authnContextClassRef,
-    authnContextDecl:       argv.authnContextDecl,
-    includeAttributeNameFormat: true,
-    profileMapper:          SimpleProfileMapper.fromMetadata(argv.config.metadata),
-    postEndpointPath:       IDP_PATHS.SSO,
-    redirectEndpointPath:   IDP_PATHS.SSO,
-    logoutEndpointPaths:    argv.sloUrl ?
-                            {
-                              redirect: IDP_PATHS.SLO,
-                              post: IDP_PATHS.SLO
-                            } : {},
-    getUserFromRequest:     function(req) { return req.user; },
-    getPostURL:             function (audience, authnRequestDom, req, callback) {
-                              return callback(null, (req.authnRequest && req.authnRequest.acsUrl) ?
-                                req.authnRequest.acsUrl :
-                                req.idp.options.acsUrl);
-                            },
-    transformAssertion:     function(assertionDom) {
-                              if (argv.authnContextDecl) {
-                                var declDoc;
-                                try {
-                                  declDoc = new Parser().parseFromString(argv.authnContextDecl);
-                                } catch(err){
-                                  console.log('Unable to parse Authentication Context Declaration XML', err);
-                                }
-                                if (declDoc) {
-                                  const authnContextDeclEl = assertionDom.createElementNS('urn:oasis:names:tc:SAML:2.0:assertion', 'saml:AuthnContextDecl');
-                                  authnContextDeclEl.appendChild(declDoc.documentElement);
-                                  const authnContextEl = assertionDom.getElementsByTagName('saml:AuthnContext')[0];
-                                  authnContextEl.appendChild(authnContextDeclEl);
-                                }
-                              }
-                            },
-    responseHandler:        function(response, opts, req, res, next) {
-                              console.log(dedent(chalk`
-                                Sending SAML Response to {cyan ${opts.postUrl}} =>
-                                  {bold RelayState} =>
-                                    {cyan ${opts.RelayState || UNDEFINED_VALUE}}
-                                  {bold SAMLResponse} =>`
-                              ));
-
-                              console.log(prettyPrintXml(response.toString(), 4));
-
-                              res.render('samlresponse', {
-                                AcsUrl: opts.postUrl,
-                                SAMLResponse: response.toString('base64'),
-                                RelayState: opts.RelayState
-                              });
-                            }
-  }
 
   /**
    * App Environment
@@ -634,8 +421,8 @@ function _runServer(argv) {
   });
 
   app.use(function(req, res, next){
-    req.user = argv.config.user;
-    req.metadata = argv.config.metadata;
+    req.user = profile;
+    req.metadata = metadata;
     req.idp = { options: idpOptions };
     req.participant = getParticipant(req);
     next();
@@ -806,13 +593,7 @@ function _runServer(argv) {
           => {cyan ${baseUrl}${IDP_PATHS.SSO}}
         urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect
           => {cyan ${baseUrl}${IDP_PATHS.SSO}}
-      ${argv.sloUrl ? `
-      SLO Bindings:
-        urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST
-          => {cyan ${baseUrl}${IDP_PATHS.SLO}}
-        urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect
-          => {cyan ${baseUrl}${IDP_PATHS.SLO}}
-      ` : ''}
+          
       IdP server ready at
         {cyan ${baseUrl}}
     `));
