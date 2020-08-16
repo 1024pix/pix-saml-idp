@@ -15,6 +15,7 @@ const chalk               = require('chalk'),
 
 const { IDP_PATHS, UNDEFINED_VALUE, WILDCARD_ADDRESSES, CERT_OPTIONS, profile, idpOptions, metadata } = require('./config')
 const { dedent } = require('./lib/utils/string-utils');
+const generateEnvironmentVariables = require('./lib/usecases/generate-environment-variables');
 
 function getHashCode(str) {
   let hash = 0;
@@ -504,6 +505,13 @@ function _runServer(argv) {
 
     console.log('Updated IdP Configuration => \n', req.idp.options);
     res.redirect('/');
+  });
+
+  app.post([IDP_PATHS.GENERATE], function(req, res, next) {
+    const env = generateEnvironmentVariables(req.body.location)
+    res.render('envResponse', {
+      env
+    });
   });
 
   // catch 404 and forward to error handler
