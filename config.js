@@ -1,6 +1,6 @@
 const SimpleProfileMapper = require('./lib/simpleProfileMapper');
-const { dedent, prettyPrintXml } = require('./utils/string-utils');
-const { resolveFilePath } = require('./utils/file-utils');
+const { dedent, prettyPrintXml } = require('./lib/utils/string-utils');
+const { resolveFilePath } = require('./lib/utils/file-utils');
 const Parser = require('xmldom').DOMParser;
 const chalk = require('chalk');
 const fs = require('fs');

@@ -14,7 +14,7 @@ const chalk               = require('chalk'),
       SessionParticipants = require('samlp/lib/sessionParticipants');
 
 const { IDP_PATHS, UNDEFINED_VALUE, WILDCARD_ADDRESSES, CERT_OPTIONS, profile, idpOptions, metadata } = require('./config')
-const { dedent } = require('./utils/string-utils');
+const { dedent } = require('./lib/utils/string-utils');
 
 function getHashCode(str) {
   let hash = 0;
