@@ -152,6 +152,7 @@ function _runServer() {
 
   const showUser = function (req, res, next) {
     res.render('user', {
+      sp,
       user: req.user,
       participant: req.participant,
       metadata: req.metadata,
