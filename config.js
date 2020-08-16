@@ -11,7 +11,7 @@ function certFileCoercer(value) {
     return fs.readFileSync(filePath)
   }
   throw new Error(
-      chalk`{red Invalid / missing {bold ${description}}} - {yellow not a valid crypt key/cert or file path}${helpText ? '\n' + helpText : ''}`
+      chalk`{red Invalid / missing {bold key/cert}} - {yellow not a valid crypt key/cert or file path}}`
   )
 };
 
@@ -39,6 +39,17 @@ const profileMapper = SimpleProfileMapper.fromMetadata(metadata);
 
 module.exports = (function() {
   const config = {
+    host: process.env.HOST || 'localhost',
+    port: process.env.PORT || 7000,
+    https: {
+      enableHttps: process.env.HTTPS || false,
+      httpsPrivateKey: process.env.HTTPS_PRIVATE_KEY,
+      httpsCert: process.env.HTTPS_CERT,
+    },
+    rollSession: process.env.ROLL_SESSION || false,
+    authentication: {
+      secret: process.env.AUTH_SECRET,
+    },
     profile: {
       userName: 'saml.jackson@example.com',
       nameIdFormat: 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
@@ -56,10 +67,13 @@ module.exports = (function() {
       SETTINGS: '/settings',
       GENERATE: '/generate'
     },
-    spPaths: {
-      metadata: '/api/saml/metadata.xml',
-      assert: '/api/saml/assert',
-      login: '/api/saml/login',
+    sp: {
+      url: process.env.SP_URL || 'http://localhost:4200',
+      paths: {
+        metadata: '/api/saml/metadata.xml',
+        assert: '/api/saml/assert',
+        login: '/api/saml/login',
+      }
     },
     idpOptions: {
       issuer:                 'urn:exemplae:idp',
@@ -69,13 +83,13 @@ module.exports = (function() {
       lifetimeInSeconds:      3600,
       authnContextClassRef:   'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport',
       allowRequestAcsUrl:     true,
-      serviceProviderId() { return `http://localhots:4200${config.spPaths.metadata}` },
+      serviceProviderId() { return `http://localhots:4200${config.sp.paths.metadata}` },
       sloUrl:                 '',
-      acsUrl() { return `http://localhots:4200${config.spPaths.assert}` },
-      destination() { return `http://localhots:4200${config.spPaths.assert}` },
-      recipient() { return `http://localhots:4200${config.spPaths.assert}` },
-      audience() { return `http://localhots:4200${config.spPaths.metadata}` },
-      RelayState() { return `http://localhots:4200${config.spPaths.login}` },
+      acsUrl() { return `${config.sp.url}${config.sp.paths.assert}` },
+      destination() { return `${config.sp.url}${config.sp.paths.assert}` },
+      recipient() { return `${config.sp.url}${config.sp.paths.assert}` },
+      audience() { return `${config.sp.url}${config.sp.paths.metadata}` },
+      RelayState() { return `${config.sp.url}${config.sp.paths.login}` },
       cert:                   certFileCoercer('./idp-public-cert.pem'),
       key:                    certFileCoercer('./idp-private-key.pem'),
       encryptAssertion:       false,

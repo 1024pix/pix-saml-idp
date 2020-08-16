@@ -10,11 +10,10 @@ const chalk               = require('chalk'),
       logger              = require('morgan'),
       bodyParser          = require('body-parser'),
       session             = require('express-session'),
-      yargs               = require('yargs/yargs'),
       samlp               = require('samlp'),
       SessionParticipants = require('samlp/lib/sessionParticipants');
 
-const { IDP_PATHS, UNDEFINED_VALUE, WILDCARD_ADDRESSES, CERT_OPTIONS, profile, idpOptions, metadata } = require('./config')
+const { port, host, https: httpsSettings, rollSession, authentication, IDP_PATHS, UNDEFINED_VALUE, WILDCARD_ADDRESSES, CERT_OPTIONS, profile, idpOptions, metadata, sp } = require('./config')
 const { dedent } = require('./lib/utils/string-utils');
 const generateEnvironmentVariables = require('./lib/usecases/generate-environment-variables');
 
@@ -53,167 +52,39 @@ function formatOptionValue(key, value) {
 /**
  * Arguments
  */
-function processArgs(args, options) {
-  let baseArgv;
-
-  if (options) {
-    baseArgv = yargs(args).config(options);
-  } else {
-    baseArgv = yargs(args);
+function _checkVariable() {
+  if (idpOptions.encryptAssertion) {
+    if (idpOptions.encryptionPublicKey === undefined) {
+      return 'encryptionPublicKey argument is also required for assertion encryption';
+    }
+    if (idpOptions.encryptionCert === undefined) {
+      return 'encryptionCert argument is also required for assertion encryption';
+    }
   }
-  return baseArgv
-    .usage('\nSimple IdP for SAML 2.0 WebSSO & SLO Profile\n\n' +
-        'Launches an IdP web server that mints SAML assertions or logout responses for a Service Provider (SP)\n\n' +
-        'Usage:\n\t$0 --acsUrl {url} --audience {uri}')
-    .alias({h: 'help'})
-    .options({
-      host: {
-        description: 'IdP Web Server Listener Host',
-        required: false,
-        default: 'localhost'
-      },
-      port: {
-        description: 'IdP Web Server Listener Port',
-        required: true,
-        alias: 'p',
-        default: 7000
-      },
-      issuer: {
-        description: 'IdP Issuer URI',
-        required: true,
-        alias: 'iss',
-        default: 'urn:example:idp'
-      },
-      acsUrl: {
-        description: 'SP Assertion Consumer URL',
-        required: false,
-        alias: 'acs'
-      },
-      sloUrl: {
-        description: 'SP Single Logout URL',
-        required: false,
-        alias: 'slo'
-      },
-      audience: {
-        description: 'SP Audience URI',
-        required: false,
-        alias: 'aud'
-      },
-      serviceProviderId: {
-        description: 'SP Issuer/Entity URI',
-        required: false,
-        alias: 'spId',
-        string: true
-      },
-      relayState: {
-        description: 'Default SAML RelayState for SAMLResponse',
-        required: false,
-        alias: 'rs'
-      },
-      disableRequestAcsUrl: {
-        description: 'Disables ability for SP AuthnRequest to specify Assertion Consumer URL',
-        required: false,
-        boolean: true,
-        alias: 'static',
-        default: false
-      },
-      encryptAssertion: {
-        description: 'Encrypts assertion with SP Public Key',
-        required: false,
-        boolean: true,
-        alias: 'enc',
-        default: false
-      },
-      https: {
-        description: 'Enables HTTPS Listener (requires httpsPrivateKey and httpsCert)',
-        required: true,
-        boolean: true,
-        default: false
-      },
-      signResponse: {
-        description: 'Enables signing of responses',
-        required: false,
-        boolean: true,
-        default: true,
-        alias: 'signResponse'
-      },
-      rollSession: {
-        description: 'Create a new session for every authn request instead of reusing an existing session',
-        required: false,
-        boolean: true,
-        default: false
-      },
-      authnContextClassRef: {
-        description: 'Authentication Context Class Reference',
-        required: false,
-        string: true,
-        default: 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport',
-        alias: 'acr'
-      },
-    })
-    .example('$0 --acsUrl http://acme.okta.com/auth/saml20/exampleidp --audience https://www.okta.com/saml2/service-provider/spf5aFRRXFGIMAYXQPNV', '')
-    .check(function(argv, aliases) {
-      if (argv.encryptAssertion) {
-        if (argv.encryptionPublicKey === undefined) {
-          return 'encryptionPublicKey argument is also required for assertion encryption';
-        }
-        if (argv.encryptionCert === undefined) {
-          return 'encryptionCert argument is also required for assertion encryption';
-        }
-      }
-      return true;
-    })
-    .wrap(baseArgv.terminalWidth());
 }
 
-function _runServer(argv) {
+function _runServer() {
+  _checkVariable();
+
   const app = express();
-  const httpServer = argv.https ?
-    https.createServer({ key: argv.httpsPrivateKey, cert: argv.httpsCert }, app) :
+  const httpServer = httpsSettings.enableHttps ?
+    https.createServer({ key: httpsSettings.httpsPrivateKey, cert: httpsSettings.httpsCert }, app) :
     http.createServer(app);
   const blocks = {};
 
   console.log(dedent(chalk`
     Listener Port:
-      {cyan ${argv.host}:${argv.port}}
+      {cyan ${host}:${port}}
     HTTPS Enabled:
-      {cyan ${argv.https}}
-
-    {bold [{yellow Identity Provider}]}
-
-    Issuer URI:
-      {cyan ${argv.issuer}}
-    Sign Response Message:
-      {cyan ${argv.signResponse}}
-    Encrypt Assertion:
-      {cyan ${argv.encryptAssertion}}
-    Authentication Context Class Reference:
-      {cyan ${argv.authnContextClassRef || UNDEFINED_VALUE}}
-    Authentication Context Declaration:
-      {cyan ${argv.authnContextDecl || UNDEFINED_VALUE}}
-    Default RelayState:
-      {cyan ${argv.relayState || UNDEFINED_VALUE}}
-
-    {bold [{yellow Service Provider}]}
-
-    Issuer URI:
-      {cyan ${argv.serviceProviderId || UNDEFINED_VALUE}}
-    Audience URI:
-      {cyan ${argv.audience || UNDEFINED_VALUE}}
-    ACS URL:
-      {cyan ${argv.acsUrl || UNDEFINED_VALUE}}
-    SLO URL:
-      {cyan ${argv.sloUrl || UNDEFINED_VALUE}}
-    Trust ACS URL in Request:
-      {cyan ${!argv.disableRequestAcsUrl}}
+      {cyan ${httpsSettings.enableHttps}}
   `));
 
   /**
    * App Environment
    */
 
-  app.set('host', process.env.HOST || argv.host);
-  app.set('port', process.env.PORT || argv.port);
+  app.set('host', host);
+  app.set('port', port);
   app.set('views', path.join(__dirname, 'views'));
 
   /**
@@ -268,7 +139,7 @@ function _runServer(argv) {
   app.use(bodyParser.urlencoded({extended: true}));
   app.use(express.static(path.join(__dirname, 'public')));
   app.use(session({
-    secret: 'The universe works on a math equation that never even ever really ends in the end',
+    secret: authentication.secret,
     resave: false,
     saveUninitialized: true,
     name: 'idp_sid',
@@ -365,7 +236,7 @@ function _runServer(argv) {
    */
 
   app.use(function(req, res, next){
-    if (argv.rollSession) {
+    if (rollSession) {
       req.session.regenerate(function(err) {
         return next();
       });
@@ -540,7 +411,7 @@ function _runServer(argv) {
   console.log(chalk`Starting IdP server on port {cyan ${app.get('host')}:${app.get('port')}}...\n`);
 
   httpServer.listen(app.get('port'), app.get('host'), function() {
-    const scheme          = argv.https ? 'https' : 'http',
+    const scheme          = https ? 'https' : 'http',
           {address, port} = httpServer.address(),
           hostname        = WILDCARD_ADDRESSES.includes(address) ? os.hostname() : 'localhost',
           baseUrl         = `${scheme}://${hostname}:${port}`;
@@ -561,14 +432,12 @@ function _runServer(argv) {
   });
 }
 
-function runServer(options) {
-  const args = processArgs([], options);
-  return _runServer(args.argv);
+function runServer() {
+  return _runServer();
 }
 
 function main () {
-  const args = processArgs(process.argv.slice(2));
-  _runServer(args.argv);
+  _runServer();
 }
 
 module.exports = {
