@@ -1,3 +1,4 @@
+require('dotenv').config();
 const chalk               = require('chalk'),
       express             = require('express'),
       os                  = require('os'),
