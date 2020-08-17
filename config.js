@@ -76,7 +76,7 @@ module.exports = (function() {
       }
     },
     idpOptions: {
-      issuer:                 'urn:exemplae:idp',
+      issuer:                 'urn:example:idp',
       signatureAlgorithm:     'rsa-sha256',
       digestAlgorithm:        'sha256',
       signResponse:           true,
