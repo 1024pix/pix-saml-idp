@@ -114,3 +114,8 @@ $RECYCLE.BIN/
 
 idp-private-key.pem
 idp-public-cert.pem
+
+# IDE
+**/.idea
+!.idea/runConfigurations/*.xml
+*.iml
