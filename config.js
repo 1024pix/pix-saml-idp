@@ -99,8 +99,8 @@ module.exports = (function() {
       authnContextDecl:       null,
       includeAttributeNameFormat: true,
       profileMapper,
-      postEndpointPath:       function() { return config.IDP_PATHS.SSO },
-      redirectEndpointPath:   function() { return config.IDP_PATHS.SSO },
+      postEndpointPath:       function() { return `${config.sp.url}${config.IDP_PATHS.SSO}` },
+      redirectEndpointPath:   function() { return `${config.sp.url}${config.IDP_PATHS.SSO}` },
       logoutEndpointPaths:   {},
       getUserFromRequest:     function(req) { return req.user; },
       getPostURL:             function (audience, authnRequestDom, req, callback) {
