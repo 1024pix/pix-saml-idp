@@ -1,21 +1,20 @@
 {
   "name": "pix-saml-idp",
   "description": "Test Identity Provider (IdP) for SAML 2.0 Web Browser SSO Profile",
-  "version": "1.2.1",
+  "version": "1.1.0",
   "private": false,
-  "author": "Karl McGuinness",
+  "author": "GIP Pix",
   "keywords": [
     "saml",
-    "idp",
-    "okta"
+    "idp"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mcguinness/saml-idp"
+    "url": "git+https://github.com/1024pix/pix-saml-idp.git"
   },
   "bugs": {
-    "url": "https://github.com/mcguinness/saml-idp/issues"
+    "url": "https://github.com/1024pix/pix-saml-idp/issues"
   },
   "scripts": {
     "start": "node app.js"
