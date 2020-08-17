@@ -17,21 +17,21 @@ function certFileCoercer(value) {
 
 const metadata = [{
   id: "IDO",
+  optional: false,
+  displayName: 'Saml ID',
+  description: 'Le samlID de l‘élève',
+  multiValue: false
+}, {
+  id: "PRE",
+  optional: false,
+  displayName: 'Prénom',
+  description: 'Le prénom de l‘élève',
+  multiValue: false
+}, {
+  id: "NOM",
   optional: true,
-  displayName: 'IDO',
-  description: 'The smalId',
-  multiValue: false
-}, {
-  id: "firstName",
-  optional: false,
-  displayName: 'First Name',
-  description: 'The given name of the user',
-  multiValue: false
-}, {
-  id: "lastName",
-  optional: false,
-  displayName: 'Last Name',
-  description: 'The surname of the user',
+  displayName: 'Nom',
+  description: 'Le nom de l‘élève',
   multiValue: false
 }];
 
@@ -54,8 +54,8 @@ module.exports = (function() {
       userName: 'saml.jackson@example.com',
       nameIdFormat: 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
       IDO: 'SamlID',
-      firstName: 'Saml',
-      lastName: 'Jackson',
+      PRE: 'Saml',
+      NOM: 'Jackson',
     },
     metadata,
     IDP_PATHS: {
@@ -99,8 +99,8 @@ module.exports = (function() {
       authnContextDecl:       null,
       includeAttributeNameFormat: true,
       profileMapper,
-      postEndpointPath:       function() { return `${config.sp.url}${config.IDP_PATHS.SSO}` },
-      redirectEndpointPath:   function() { return `${config.sp.url}${config.IDP_PATHS.SSO}` },
+      postEndpointPath:       () => { return `http://${config.host}:${config.port}${config.IDP_PATHS.SSO}` },
+      redirectEndpointPath:   function() { return config.IDP_PATHS.SSO },
       logoutEndpointPaths:   {},
       getUserFromRequest:     function(req) { return req.user; },
       getPostURL:             function (audience, authnRequestDom, req, callback) {
