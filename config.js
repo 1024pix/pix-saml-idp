@@ -83,7 +83,7 @@ module.exports = (function() {
       lifetimeInSeconds:      3600,
       authnContextClassRef:   'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport',
       allowRequestAcsUrl:     true,
-      serviceProviderId() { return `http://localhots:4200${config.sp.paths.metadata}` },
+      serviceProviderId() { return `${config.sp.url}${config.sp.paths.metadata}` },
       sloUrl:                 '',
       acsUrl() { return `${config.sp.url}${config.sp.paths.assert}` },
       destination() { return `${config.sp.url}${config.sp.paths.assert}` },
