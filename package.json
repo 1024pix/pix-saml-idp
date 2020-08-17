@@ -34,6 +34,7 @@
     "express-session": "^1.17.1",
     "extend": "^3.0.2",
     "hbs": "^4.1.1",
+    "memorystore": "^1.6.2",
     "morgan": "^1.10.0",
     "samlp": "github:mcguinness/node-samlp",
     "xml-formatter": "^2.1.0",

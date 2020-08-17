@@ -10,6 +10,7 @@ const chalk               = require('chalk'),
       logger              = require('morgan'),
       bodyParser          = require('body-parser'),
       session             = require('express-session'),
+      MemoryStore = require('memorystore')(session),
       samlp               = require('samlp'),
       SessionParticipants = require('samlp/lib/sessionParticipants');
 
@@ -143,7 +144,10 @@ function _runServer() {
     resave: false,
     saveUninitialized: true,
     name: 'idp_sid',
-    cookie: { maxAge: 60 * 60 * 1000 }
+    cookie: { maxAge: 60 * 60 * 1000 },
+    store: new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    }),
   }));
 
   /**
