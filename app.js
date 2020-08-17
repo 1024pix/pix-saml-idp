@@ -355,35 +355,6 @@ function _runServer() {
     }
   });
 
-  app.get([IDP_PATHS.SETTINGS], function(req, res, next) {
-    res.render('settings', {
-      idp: req.idp.options
-    });
-  });
-
-  app.post([IDP_PATHS.SETTINGS], function(req, res, next) {
-    Object.keys(req.body).forEach(function(key) {
-      switch(req.body[key].toLowerCase()){
-        case "true": case "yes": case "1":
-          req.idp.options[key] = true;
-          break;
-        case "false": case "no": case "0":
-          req.idp.options[key] = false;
-          break;
-        default:
-          req.idp.options[key] = req.body[key];
-          break;
-      }
-
-      if (req.body[key].match(/^\d+$/)) {
-        req.idp.options[key] = parseInt(req.body[key], '10');
-      }
-    });
-
-    console.log('Updated IdP Configuration => \n', req.idp.options);
-    res.redirect('/');
-  });
-
   app.post([IDP_PATHS.GENERATE], function(req, res, next) {
     const env = generateEnvironmentVariables(req.body.location)
     res.render('envResponse', {

@@ -13,7 +13,7 @@ function certFileCoercer(value) {
   throw new Error(
       chalk`{red Invalid / missing {bold key/cert}} - {yellow not a valid crypt key/cert or file path}}`
   )
-};
+}
 
 const metadata = [{
   id: "IDO",
@@ -64,7 +64,6 @@ module.exports = (function() {
       METADATA: '/metadata',
       SIGN_IN: '/signin',
       SIGN_OUT: '/signout',
-      SETTINGS: '/settings',
       GENERATE: '/generate'
     },
     sp: {
@@ -85,11 +84,9 @@ module.exports = (function() {
       allowRequestAcsUrl:     true,
       serviceProviderId() { return `${config.sp.url}${config.sp.paths.metadata}` },
       sloUrl:                 '',
-      acsUrl() { return `${config.sp.url}${config.sp.paths.assert}` },
-      destination() { return `${config.sp.url}${config.sp.paths.assert}` },
-      recipient() { return `${config.sp.url}${config.sp.paths.assert}` },
-      audience() { return `${config.sp.url}${config.sp.paths.metadata}` },
-      RelayState() { return `${config.sp.url}${config.sp.paths.login}` },
+      acsUrl: () => { return `${config.sp.url}${config.sp.paths.assert}` },
+      audience: () => { return `${config.sp.url}${config.sp.paths.metadata}` },
+      relayState: () => { return `${config.sp.url}${config.sp.paths.login}` },
       cert:                   certFileCoercer('./idp-public-cert.pem'),
       key:                    certFileCoercer('./idp-private-key.pem'),
       encryptAssertion:       false,
@@ -122,11 +119,11 @@ module.exports = (function() {
           }
         }
       },
-      responseHandler:        function(response, opts, req, res, next) {
+      responseHandler:        function(response, opts, req, res) {
         console.log(dedent(chalk`
                                 Sending SAML Response to {cyan ${opts.postUrl}} =>
                                   {bold RelayState} =>
-                                    {cyan ${opts.RelayState || UNDEFINED_VALUE}}
+                                    {cyan ${opts.relayState || UNDEFINED_VALUE}}
                                   {bold SAMLResponse} =>`
         ));
 
