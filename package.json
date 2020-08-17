@@ -17,11 +17,9 @@
   "bugs": {
     "url": "https://github.com/mcguinness/saml-idp/issues"
   },
-  "main": "./app.js",
   "scripts": {
     "start": "node app.js"
   },
-  "bin": "./bin/run.js",
   "engines": {
     "node": ">=6.0.0"
   },
