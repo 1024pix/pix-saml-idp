@@ -18,6 +18,7 @@
     "url": "https://github.com/mcguinness/saml-idp/issues"
   },
   "scripts": {
+    "config": "cp sample.env .env && npm install",
     "start": "node app.js"
   },
   "engines": {
