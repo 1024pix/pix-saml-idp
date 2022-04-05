@@ -17,7 +17,7 @@
     "url": "https://github.com/1024pix/pix-saml-idp/issues"
   },
   "scripts": {
-    "config": "cp sample.env .env && npm install",
+    "config": "cp sample.env .env && npm ci",
     "start": "node app.js"
   },
   "engines": {
