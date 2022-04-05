@@ -12,7 +12,7 @@ git clone github.com:1024pix/pix-saml-idp.git && cd pix-saml-idp
 
 2/ Lancer le script de configuration :
 ``` shell
-npm run configure
+npm run config
 ```
 
 3/ Lancer l'application : 
