@@ -20,4 +20,4 @@ npm run config
 npm start
 ```
 
-4/ Accéder à l'application sur : [localhost:7000](http://localhost:7000)
+4/ Accéder à l'application sur : [localhost:7654](http://localhost:7654)

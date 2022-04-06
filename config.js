@@ -40,7 +40,7 @@ const profileMapper = SimpleProfileMapper.fromMetadata(metadata);
 module.exports = (function() {
   const config = {
     host: process.env.HOST || 'localhost',
-    port: process.env.PORT || 7000,
+    port: process.env.PORT || 7654,
     https: {
       enableHttps: process.env.HTTPS || false,
       httpsPrivateKey: process.env.HTTPS_PRIVATE_KEY,
