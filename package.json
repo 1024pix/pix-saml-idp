@@ -21,7 +21,7 @@
     "start": "node app.js"
   },
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=v10.24.1"
   },
   "dependencies": {
     "body-parser": "~1.19.0",
