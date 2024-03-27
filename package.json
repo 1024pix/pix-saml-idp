@@ -37,7 +37,7 @@
     "samlp": "github:mcguinness/node-samlp",
     "xml-formatter": "^2.1.0",
     "xmlbuilder": "^15.1.1",
-    "xmldom": "^0.3.0",
+    "xmldom": "^0.6.0",
     "yargs": "^15.3.1"
   }
 }
