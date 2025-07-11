@@ -50,6 +50,7 @@ module.exports = (function() {
     authentication: {
       secret: process.env.AUTH_SECRET,
     },
+    readOnlyMode: process.env.READ_ONLY_MODE || false,
     profile: {
       userName: 'saml.jackson@example.com',
       nameIdFormat: 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',

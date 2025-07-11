@@ -21,3 +21,8 @@ npm start
 ```
 
 4/ Accéder à l'application sur : [localhost:7654](http://localhost:7654)
+
+
+## Option
+
+- La variable d'environnement `READ_ONLY_MODE=true` permet de désactiver la génération de configuration.

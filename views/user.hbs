@@ -91,6 +91,13 @@
 {{#extend "scripts"}}
 <script>
 $(document).ready(function() {
+   var readOnlyMode = '{{readOnlyMode}}' === 'true';
+
+   if (readOnlyMode) {
+     $('#location').prop('disabled', true);
+     $('#btn-generate').prop('disabled', true);
+   }
+
    $("#nameIdFormat option").filter(function() {
        return $(this).text() == '{{user.nameIdFormat}}';
    }).prop('selected', true);

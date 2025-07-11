@@ -14,7 +14,7 @@ const chalk               = require('chalk'),
       samlp               = require('samlp'),
       SessionParticipants = require('samlp/lib/sessionParticipants');
 
-const { port, host, https: httpsSettings, rollSession, authentication, IDP_PATHS, UNDEFINED_VALUE, WILDCARD_ADDRESSES, CERT_OPTIONS, profile, idpOptions, metadata, sp } = require('./config')
+const { port, host, https: httpsSettings, rollSession, authentication, readOnlyMode, IDP_PATHS, UNDEFINED_VALUE, WILDCARD_ADDRESSES, CERT_OPTIONS, profile, idpOptions, metadata, sp } = require('./config')
 const { dedent } = require('./lib/utils/string-utils');
 const generateEnvironmentVariables = require('./lib/usecases/generate-environment-variables');
 
@@ -158,6 +158,7 @@ function _runServer() {
     res.render('user', {
       sp,
       user: req.user,
+      readOnlyMode: req.readOnlyMode,
       participant: req.participant,
       metadata: req.metadata,
       authnRequest: req.authnRequest,
@@ -253,6 +254,7 @@ function _runServer() {
   app.use(function(req, res, next){
     req.user = profile;
     req.metadata = metadata;
+    req.readOnlyMode = readOnlyMode;
     req.idp = { options: idpOptions };
     req.participant = getParticipant(req);
     next();
