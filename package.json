@@ -31,7 +31,7 @@
     "express": "^4.20.0",
     "express-session": "^1.19.0",
     "extend": "^3.0.2",
-    "hbs": "^4.1.1",
+    "hbs": "^4.4.0",
     "memorystore": "^1.6.2",
     "morgan": "^1.10.0",
     "samlp": "github:mcguinness/node-samlp",
